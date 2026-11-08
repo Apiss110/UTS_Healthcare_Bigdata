@@ -241,15 +241,3 @@ Waktu eksekusi tidak dicantumkan karena bergantung pada perangkat.
 | Port 5000 sudah dipakai | Ubah `port=5000` di baris terakhir `app.py`. |
 | Pipeline lambat | Kecilkan faktor skala: `python main.py --scale 100`. |
 | Pipeline gagal dari dashboard | Buka panel *Pipeline console* di tab Veracity & Pengujian, atau berkas `output/pipeline_last_run.log`. |
-
-## 9. Tim
-
-| No | Nama | NIM | Peran |
-|---|---|---|---|
-| 1 | _(isi)_ | _(isi)_ | Project Lead / Healthcare Analyst |
-| 2 | _(isi)_ | _(isi)_ | Big Data System Engineer |
-| 3 | _(isi)_ | _(isi)_ | Data Engineer |
-| 4 | Hafidz Al Ghazali | 152024046 | Big Data Developer |
-| 5 | _(isi)_ | _(isi)_ | Lead Data Analyst |
-
-Mata kuliah IFB-451 Big Data, Dosen: Dr. Saripudin (Kelas CC).
