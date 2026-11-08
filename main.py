@@ -9,7 +9,7 @@ STRUKTUR FOLDER
   data/processed/                              <- OUTPUT data bersih (ditulis otomatis saat pipeline berjalan)
       claims_clean.csv  claims_clean.parquet/  claims_quarantine.csv  patients_clean.json
   output/                                      <- OUTPUT analitik untuk dashboard Flask
-      flagged_claims.csv  summary_cpt_risk.csv  pipeline_metrics.json
+      flagged_claims.csv  summary_cpt_risk.csv  provider_totals.csv  pipeline_metrics.json
 
 ALUR PIPELINE
   [0] Variety   : baca CSV (skema eksplisit) + JSON (skema eksplisit), tampilkan skema keduanya
@@ -472,6 +472,7 @@ def main():
     banner("[6] HASIL ANALITIK (data asli bersih)")
     print("\nOperasi A - total klaim per provider:")
     operation_a(clean_real).show(truncate=False)
+    operation_a(clean_real).toPandas().to_csv(os.path.join(args.out, "provider_totals.csv"), index=False)   # untuk chart dashboard
 
     jb = operation_b(clean_real, patients).cache()
     flagged = jb.filter(F.col("n_flags") >= 1)

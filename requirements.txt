@@ -1,0 +1,9 @@
+# Healthcare Insurance Claims Analytics - IFB-451 Big Data
+# Install: pip install -r requirements.txt
+#
+# PySpark membutuhkan Java (JDK 8, 11, atau 17) terpasang di komputer. Python-nya saja tidak cukup.
+# Versi di bawah belum diuji di semua lingkungan; jika ada konflik, coba pyspark 3.5.x.
+
+pyspark>=3.5.1        # mesin pemrosesan pipeline (main.py)
+pandas>=2.0           # membaca/menulis CSV-JSON hasil pipeline dan DataFrame.toPandas()
+flask>=3.0            # dashboard web (app.py)
