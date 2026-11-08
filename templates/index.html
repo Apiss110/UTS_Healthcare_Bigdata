@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Analitik Klaim Asuransi Kesehatan</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+:root{
+  --bg:#ffffff; --soft:#f8fafc; --text:#1f2937; --muted:#64748b; --line:#e2e8f0;
+  --blue:#2563eb; --blue-soft:#eff6ff; --green:#16a34a; --green-soft:#f0fdf4;
+  --red:#dc2626; --red-soft:#fef2f2; --red-line:#fecaca; --amber:#b45309; --amber-soft:#fffbeb;
+  --font:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.55;font-variant-numeric:tabular-nums}
+a{color:var(--blue)}
+code,.mono{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:.88em;background:var(--soft);border:1px solid var(--line);padding:0 5px;border-radius:4px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ---------- header ---------- */
+.top{border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;padding-top:20px;padding-bottom:20px}
+.top h1{margin:0;font-size:22px;font-weight:650}
+.top p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.grow{flex:1}
+.status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#cbd5e1;flex:none}
+.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:6px;padding:11px 20px;font:600 13.5px var(--font);letter-spacing:.04em;cursor:pointer}
+.btn:hover{background:#1d4ed8}
+.btn:disabled{opacity:.55;cursor:wait}
+
+/* ---------- flash ---------- */
+.flashes{margin-top:16px;display:grid;gap:8px}
+.flash{border:1px solid var(--line);border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;gap:12px;background:var(--soft)}
+.flash.success{background:var(--green-soft);border-color:#bbf7d0;color:#166534}
+.flash.danger{background:var(--red-soft);border-color:var(--red-line);color:#991b1b}
+.flash.warning{background:var(--amber-soft);border-color:#fde68a;color:var(--amber)}
+.flash button{background:none;border:0;color:inherit;font-size:18px;line-height:1;cursor:pointer}
+
+/* ---------- sections ---------- */
+section.block{padding:34px 0;border-bottom:1px solid var(--line)}
+section.block:last-of-type{border-bottom:0}
+h2{margin:0 0 4px;font-size:20px;font-weight:650}
+.lead{margin:0 0 20px;color:var(--muted);max-width:75ch}
+h3{margin:0 0 8px;font-size:15.5px;font-weight:650}
+.badge{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 10px;color:var(--muted);margin-left:8px;vertical-align:middle;font-weight:500}
+.badge.sim{border-color:#fde68a;background:var(--amber-soft);color:var(--amber)}
+.note{color:var(--muted);font-size:13.5px;margin:12px 0 0}
+.note b{color:var(--text)}
+
+.row{display:grid;gap:18px}
+.row.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.row>*{min-width:0}
+@media (max-width:820px){.row.two,.row.three{grid-template-columns:minmax(0,1fr)}}
+
+.card{border:1px solid var(--line);border-radius:10px;padding:18px 20px;background:#fff}
+.card.soft{background:var(--soft)}
+.card .lbl{color:var(--muted);font-size:13.5px}
+.card .num{font-size:34px;font-weight:650;line-height:1.15;margin-top:2px}
+.card .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.num.blue{color:var(--blue)}.num.green{color:var(--green)}.num.red{color:var(--red)}
+.card.red{background:var(--red-soft);border-color:var(--red-line)}
+
+.explain{border-left:4px solid var(--blue);background:var(--blue-soft);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:18px}
+.explain.green{border-left-color:var(--green);background:var(--green-soft)}
+.explain h3{margin-bottom:6px}
+.explain p{margin:0 0 8px}
+.explain p:last-child,.explain ul:last-child{margin-bottom:0}
+.explain ul{margin:6px 0 8px;padding-left:20px}
+.explain li{margin-bottom:3px}
+
+.opcard{border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.opcard .tag{display:inline-block;font-size:12.5px;font-weight:650;border-radius:4px;padding:2px 9px;margin-bottom:8px}
+.opcard.a .tag{background:var(--green-soft);color:#166534;border:1px solid #bbf7d0}
+.opcard.b .tag{background:var(--blue-soft);color:#1e40af;border:1px solid #bfdbfe}
+.opcard dl{margin:10px 0 0;display:grid;grid-template-columns:128px 1fr;gap:8px 12px;font-size:14px}
+.opcard dt{color:var(--muted)}
+.opcard dd{margin:0}
+@media (max-width:560px){.opcard dl{grid-template-columns:1fr}.opcard dt{margin-top:6px}}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:#fff;border:0;border-right:1px solid var(--line);padding:5px 12px;font:13px var(--font);color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--blue-soft);color:var(--blue);font-weight:600}
+.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:22px 0 8px}
+.toolbar h3{margin:0}
+
+.chart{width:100%;min-height:300px}
+.chart.small{min-height:200px}
+.donuts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:640px){.donuts{grid-template-columns:minmax(0,1fr)}}
+.donut{text-align:center}
+.donut h3{margin-bottom:0}
+.donut .cap{color:var(--muted);font-size:13px}
+.empty{border:1px dashed #cbd5e1;border-radius:8px;padding:28px 20px;text-align:center;color:var(--muted);background:var(--soft)}
+.empty b{display:block;color:var(--text);margin-bottom:2px}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:0}
+th{background:var(--soft);color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap;position:sticky;top:0}
+td.num,th.num{text-align:right}
+tbody tr:hover td{background:#f8fafc}
+tr.hot td{background:var(--red-soft)}
+table.var td:first-child{color:var(--muted);width:17%}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable[aria-sort="ascending"]::after{content:" \25B2";font-size:10px;color:var(--blue)}
+th.sortable[aria-sort="descending"]::after{content:" \25BC";font-size:10px;color:var(--blue)}
+.chip{display:inline-block;border:1px solid var(--red-line);background:var(--red-soft);color:#b91c1c;border-radius:999px;padding:0 9px;margin:0 4px 4px 0;font-size:12.5px}
+.chip.gray{border-color:var(--line);background:var(--soft);color:var(--muted)}
+.tier{font-size:12px;border-radius:4px;padding:0 6px;border:1px solid var(--line)}
+.tier.HIGH{background:var(--red-soft);border-color:var(--red-line);color:#b91c1c}
+.tier.MEDIUM{background:var(--amber-soft);border-color:#fde68a;color:var(--amber)}
+.tier.LOW{background:var(--green-soft);border-color:#bbf7d0;color:#166534}
+.rank{font-weight:700;color:var(--red)}
+.scroll-y{max-height:520px}
+.rules{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:14px}
+.rules li{margin-bottom:3px}
+
+/* ---------- volume bar ---------- */
+.bar{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--blue);min-width:3px;border-radius:99px}
+.barrow{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:18px}
+
+/* ---------- footer / console ---------- */
+details.console{margin-top:8px;border:1px solid var(--line);border-radius:8px}
+details.console summary{padding:11px 16px;cursor:pointer;color:var(--muted);font-size:14px}
+details.console pre{margin:0;padding:14px 16px;border-top:1px solid var(--line);max-height:320px;overflow:auto;background:var(--soft);
+  font:12.5px/1.5 Consolas,"Cascadia Mono",Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+footer{padding:22px 0 40px;color:var(--muted);font-size:13.5px}
+footer b{color:var(--text)}
+
+/* ---------- overlay ---------- */
+.overlay{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:20px;background:rgba(255,255,255,.9)}
+.overlay.on{display:grid}
+.ovbox{width:min(480px,100%);background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px 28px;box-shadow:0 12px 40px rgba(15,23,42,.12)}
+.ovtop{display:flex;gap:18px;align-items:center}
+.spinner{width:44px;height:44px;border:4px solid #dbeafe;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ovtop h2{font-size:18px;margin:0}
+.ovtop p{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+.elapsed{font-size:24px;font-weight:650;color:var(--blue);margin-top:4px}
+.stages{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:5px;font-size:14px;color:#94a3b8}
+.stages li{display:flex;gap:10px}
+.stages li::before{content:"\25CB";}
+.stages li.done{color:var(--muted)}.stages li.done::before{content:"\2713";color:var(--green)}
+.stages li.now{color:var(--text);font-weight:600}.stages li.now::before{content:"\25B6";color:var(--blue);font-size:11px;padding-top:3px}
+.ovnote{margin:14px 0 0;color:#94a3b8;font-size:12.5px}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
+@media (max-width:640px){.wrap{padding:0 16px}.btn{width:100%}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>Dashboard Analitik Klaim Asuransi Kesehatan</h1>
+      <p>Pipeline PySpark dan 5V Big Data, mata kuliah IFB-451</p>
+    </div>
+    <div class="grow"></div>
+    <div class="status" role="status" aria-live="polite">
+      {% if data.last_run %}
+        <span class="dot {{ 'ok' if data.last_run.ok else 'bad' }}"></span>
+        <span>Run terakhir {{ data.last_run.finished_at.replace('T', ' ') }}, {{ data.last_run.duration_s }} detik, {{ 'berhasil' if data.last_run.ok else 'gagal (exit ' ~ data.last_run.returncode ~ ')' }}</span>
+      {% elif data.has_output %}
+        <span class="dot"></span><span>Menampilkan output yang sudah ada di folder output/</span>
+      {% else %}
+        <span class="dot"></span><span>Pipeline belum pernah dijalankan</span>
+      {% endif %}
+    </div>
+    <form id="runForm" method="post" action="{{ url_for('run_pipeline') }}">
+      <button id="runBtn" class="btn" type="submit">EXECUTE PYSPARK PIPELINE</button>
+    </form>
+  </div>
+</header>
+
+<main class="wrap">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flashes" role="alert">
+  {% for category, message in messages %}
+  <div class="flash {{ category }}"><span>{{ message }}</span><button type="button" aria-label="Tutup pesan" onclick="this.parentElement.remove()">&times;</button></div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ===================== VOLUME ===================== -->
+<section class="block" aria-labelledby="h-volume">
+  <h2 id="h-volume">Volume <span class="badge sim">skala simulasi</span></h2>
+  <p class="lead">Seberapa besar data yang diproses. Dashboard ini memakai dua ukuran: data asli untuk menarik kesimpulan, dan data skala untuk mengukur beban komputasi.</p>
+
+  <div class="row two">
+    <div class="card"><div class="lbl">Data asli (klaim bersih)</div><div class="num blue" id="vol-real">-</div><div class="sub" id="vol-real-sub"></div></div>
+    <div class="card"><div class="lbl">Data skala (klaim)</div><div class="num green" id="vol-scaled">-</div><div class="sub" id="vol-scaled-sub"></div></div>
+  </div>
+  <div class="barrow"><span>Data asli sebagai porsi dari data skala</span><b id="vol-ratio" style="color:var(--text)"></b></div>
+  <div class="bar"><i id="vol-fill"></i></div>
+
+  <div class="explain">
+    <h3>Mengapa ada data asli dan data skala?</h3>
+    <p><b>Data asli (<span id="x-real"></span> klaim)</b> adalah isi <code>data/raw</code> setelah dibersihkan: <span id="x-raw"></span> baris mentah menjadi <span id="x-real2"></span> klaim bersih (rinciannya ada di bagian Veracity). Cakupannya 10 pasien, 7 provider, tahun 2017 sampai 2018. Seluruh temuan analitik di bawah, termasuk klaim yang ter-flag, dihitung dari data ini.</p>
+    <p><b>Data skala (<span id="x-scaled"></span> klaim)</b> dibuat dengan menyalin data bersih <span id="x-factor"></span> kali. Setiap salinan diberi sufiks pada <code>CLAIM_ID</code> dan <code>PATIENT_ID</code>, sehingga Spark memperlakukannya sebagai klaim dan pasien yang berbeda (10 pasien menjadi <span id="x-patscaled"></span>).</p>
+    <p><b>Fungsinya:</b> data asli terlalu kecil untuk menunjukkan perilaku Spark. Waktunya hanya sekitar sepersekian detik dan sebagian besar habis untuk overhead memulai proses, bukan untuk menghitung. Dengan data yang jauh lebih besar, perbedaan biaya antara Operasi A dan Operasi B menjadi terlihat dan bisa diukur.</p>
+    <p><b>Batasannya:</b> salinan tidak menambah informasi baru. Pola harga dan provider-nya identik dengan data asli, sehingga data skala hanya dipakai untuk benchmark waktu, bukan untuk kesimpulan tentang klaim. Waktu pada data skala juga bukan prediksi pasti untuk data nyata sebesar itu, karena data nyata lebih beragam.</p>
+  </div>
+  <ul class="rules" id="vol-facts"></ul>
+</section>
+
+<!-- ===================== VELOCITY ===================== -->
+<section class="block" aria-labelledby="h-velocity">
+  <h2 id="h-velocity">Velocity <span class="badge sim">batch simulasi</span><span class="badge" id="vel-src"></span></h2>
+  <p class="lead">Seberapa cepat data masuk dan diproses. Dua operasi dijalankan pada data yang sama untuk membandingkan waktu eksekusinya (detik, median dari tiga kali jalan setelah pemanasan).</p>
+
+  <div class="row two">
+    <div class="opcard a">
+      <span class="tag">Operasi A: agregasi sederhana</span>
+      <h3>Berapa total pembayaran tiap provider?</h3>
+      <dl>
+        <dt>Yang dilakukan</dt><dd>Mengelompokkan klaim per provider, lalu menghitung jumlah klaim, total, dan rata-rata pembayaran.</dd>
+        <dt>Data yang dipakai</dt><dd>Satu tabel: klaim (CSV).</dd>
+        <dt>Cara kerja Spark</dt><dd><code>groupBy</code> lalu <code>agg</code>. Cukup satu pengacakan data (shuffle).</dd>
+        <dt>Alasan dipilih</dt><dd>Ini pertanyaan rutin perusahaan asuransi dan menjadi pembanding dasar: biaya komputasi paling ringan untuk jumlah baris yang sama.</dd>
+      </dl>
+    </div>
+    <div class="opcard b">
+      <span class="tag">Operasi B: relasional dan temporal</span>
+      <h3>Klaim mana yang tidak wajar?</h3>
+      <dl>
+        <dt>Yang dilakukan</dt><dd>Menggabungkan klaim dengan profil pasien, lalu menilai tiap klaim dengan lima aturan flag.</dd>
+        <dt>Data yang dipakai</dt><dd>Dua sumber: klaim (CSV) dan profil pasien (JSON), digabung lewat <code>PATIENT_ID</code>.</dd>
+        <dt>Cara kerja Spark</dt><dd>Join, statistik harga per kode CPT, window function per CPT dan spesialisasi, serta window 30 hari per pasien. Setiap tahap mengacak ulang data.</dd>
+        <dt>Alasan dipilih</dt><dd>Mendeteksi klaim tidak wajar memang membutuhkan konteks: harga dibanding klaim sejenis, kecocokan spesialisasi, dan frekuensi klaim pasien dari waktu ke waktu.</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <h3>Perbandingan waktu eksekusi</h3>
+    <div class="seg" role="group" aria-label="Skala sumbu Y">
+      <button type="button" id="vel-lin" aria-pressed="true">Linear</button>
+      <button type="button" id="vel-log" aria-pressed="false">Log</button>
+    </div>
+  </div>
+  <div id="vel-chart" class="chart"></div>
+  <div id="vel-facts" class="note"></div>
+
+  <div class="explain">
+    <h3>Mengapa dibandingkan, dan apa yang bisa disimpulkan?</h3>
+    <p>Kedua operasi membaca data yang sama, jadi selisih waktunya tidak bisa dijelaskan oleh jumlah baris. Selisih itu berasal dari <b>struktur query</b>: Operasi B membutuhkan lebih banyak join, window function, dan pengacakan data daripada Operasi A. Jumlah <i>Exchange</i> (pengacakan) pada rencana eksekusi di atas menjadi buktinya.</p>
+    <p>Hasil keduanya juga berbeda nilainya. Operasi A menunjukkan provider mana yang total pembayarannya terbesar, tetapi tidak menjelaskan alasannya. Operasi B menjawab alasannya, misalnya klaim penggantian sendi bernilai belasan ribu dolar yang ditagih oleh provider non-ortopedi (lihat bagian Value).</p>
+  </div>
+
+  <div class="toolbar"><h3>Latensi ingestion per batch kuartalan</h3></div>
+  <div id="vel-batch" class="chart small"></div>
+  <p class="note">Klaim dipecah menjadi delapan batch per kuartal untuk mensimulasikan pengajuan klaim berkala, lalu dibaca satu per satu. Ini simulasi batch, bukan aliran data nyata.</p>
+</section>
+
+<!-- ===================== VARIETY ===================== -->
+<section class="block" aria-labelledby="h-variety">
+  <h2 id="h-variety">Variety</h2>
+  <p class="lead">Dua berkas dengan representasi berbeda di <code>data/raw</code>, diintegrasikan lewat <code>PATIENT_ID</code>.</p>
+  <div class="tablewrap">
+    <table class="var">
+      <thead><tr><th></th><th>CSV (terstruktur)</th><th>JSON (semi-terstruktur)</th></tr></thead>
+      <tbody>
+        <tr><td>Berkas</td><td><code>Dataset_HealthcareInsurance.csv</code></td><td><code>Dataset_HealthcareInsurance.json</code> (JSON Lines)</td></tr>
+        <tr><td>Granularitas</td><td>1 baris = 1 klaim</td><td>1 objek = 1 pasien</td></tr>
+        <tr><td>Bentuk skema</td><td>Tabel dengan 9 kolom bertipe tetap (integer, tanggal, teks), skema didefinisikan eksplisit di Spark</td><td>Satu objek JSON per baris dengan 3 field teks. Strukturnya datar, tidak bersarang</td></tr>
+        <tr><td>Field</td>
+          <td><code>CLAIM_ID</code>, <code>PATIENT_ID</code>, <code>DATE_OF_SERVICE</code>, <code>CPT_CODE</code>, <code>CPT_DESCRIPTION</code>, <code>PROVIDER_NPI</code>, <code>PROVIDER_SPECIALTY</code>, <code>TOTAL_PAID_BY_INSURANCE</code>, <code>PATIENT_COPAYMENT</code></td>
+          <td><code>PATIENT_ID</code><br><code>PATIENT_STATE</code> (kosong pada seluruh pasien)<br><code>PRODUCT_LINE</code> (Medicare atau Commercial)</td></tr>
+        <tr><td>Akses di Spark</td><td><code>spark.read.csv(schema=...)</code></td><td><code>spark.read.json(schema=...)</code></td></tr>
+        <tr><td>Peran analitik</td><td>Fakta transaksi: harga, prosedur, provider, tanggal</td><td>Dimensi pasien: lini produk. Tingkat risiko dihitung di Spark dan ditambahkan ke profil pasien</td></tr>
+        <tr><td>Integrasi</td><td colspan="2" style="text-align:center">Inner join <code>PATIENT_ID</code> pada Operasi B (JSON memberi <code>PRODUCT_LINE</code> dan <code>RISK_TIER</code>)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><b>Catatan:</b> <code>RISK_TIER</code> tidak ada di data mentah. Nilainya diturunkan di Spark dari total pembayaran per pasien (tertile), jadi bukan data klinis. <code>PATIENT_STATE</code> kosong di seluruh JSON sehingga tidak dipakai dalam analisis. Dataset tidak memiliki kolom diagnosis, sehingga kode prosedur CPT dipakai sebagai gantinya.</p>
+</section>
+
+<!-- ===================== VERACITY ===================== -->
+<section class="block" aria-labelledby="h-veracity">
+  <h2 id="h-veracity">Veracity <span class="badge" id="ver-src"></span></h2>
+  <p class="lead">Proporsi baris bermasalah sebelum dan sesudah pembersihan. Cacat ini berasal langsung dari data mentah di <code>data/raw</code>, bukan hasil simulasi.</p>
+  <div class="donuts">
+    <div class="donut"><h3>Sebelum pembersihan</h3><div id="ver-before" class="chart small" style="min-height:240px"></div><div class="cap" id="ver-before-cap"></div></div>
+    <div class="donut"><h3>Sesudah pembersihan</h3><div id="ver-after" class="chart small" style="min-height:240px"></div><div class="cap" id="ver-after-cap"></div></div>
+  </div>
+  <div id="ver-detail"></div>
+  <div class="toolbar"><h3>Aturan penanganan</h3></div>
+  <ol class="rules" style="margin-top:0">
+    <li>Klaim ganda: dipertahankan satu baris per <code>CLAIM_ID</code>, salinan lainnya dicatat di berkas karantina. Semua salinan terbukti identik, jadi tidak ada informasi yang hilang.</li>
+    <li>Spesialisasi provider kosong: dipulihkan dari pemetaan <code>PROVIDER_NPI</code> ke spesialisasi, hanya jika NPI itu punya tepat satu spesialisasi di data.</li>
+    <li>Nilai kosong lain yang tidak bisa dipulihkan: dikarantina, tidak ditebak.</li>
+    <li>Tagihan bernilai nol atau negatif: dikarantina. Angka dan tandanya tidak diperbaiki dengan menebak, karena ini nilai uang.</li>
+    <li>Biaya pasien lebih besar dari bayar asuransi: tidak dihapus, hanya diberi flag untuk ditinjau manual.</li>
+  </ol>
+  <div class="toolbar"><h3>Dataset bersih tersimpan di <code>data/processed</code></h3></div>
+  <div id="proc-files"></div>
+</section>
+
+<!-- ===================== VALUE ===================== -->
+<section class="block" aria-labelledby="h-value">
+  <h2 id="h-value">Value: klaim yang tidak wajar</h2>
+  <p class="lead">Klaim yang menyimpang dari pola harga per kode CPT, kecocokan spesialisasi provider, dan frekuensi klaim pasien. Ini indikasi untuk audit, bukan bukti kecurangan.</p>
+
+  <div id="val-empty" class="empty" style="display:none">
+    <b>Belum ada hasil analisis</b>Klik EXECUTE PYSPARK PIPELINE untuk menghasilkan <code>output/flagged_claims.csv</code> dan <code>output/summary_cpt_risk.csv</code>.
+  </div>
+
+  <div id="val-body" style="display:none">
+    <div class="row three">
+      <div class="card"><div class="lbl">Total klaim dievaluasi</div><div class="num blue" id="k-total">-</div><div class="sub" id="k-total-sub"></div></div>
+      <div class="card red"><div class="lbl">Klaim ter-flag</div><div class="num red" id="k-flag">-</div><div class="sub" id="k-flag-sub"></div></div>
+      <div class="card red"><div class="lbl">Potensi nilai fraud (USD)</div><div class="num red" id="k-paid">-</div><div class="sub" id="k-paid-sub"></div></div>
+    </div>
+
+    <div class="row two" style="margin-top:8px">
+      <div>
+        <div class="toolbar">
+          <h3>Top 5 prosedur medis dengan anomali tertinggi</h3>
+          <div class="seg" role="group" aria-label="Urutkan prosedur berdasarkan">
+            <button type="button" id="top-val" aria-pressed="true">Nilai (USD)</button>
+            <button type="button" id="top-cnt" aria-pressed="false">Jumlah klaim</button>
+          </div>
+        </div>
+        <div id="top-chart" class="chart"></div>
+        <div id="rule-chips" class="note"></div>
+      </div>
+      <div>
+        <div class="toolbar"><h3>Penggantian sendi per provider (CPT 27132 dan 27447)</h3></div>
+        <div id="joint-empty" class="empty" style="display:none"><b>Rincian belum tersedia</b>Tabel ini dibaca dari <code>output/pipeline_metrics.json</code> setelah pipeline dijalankan.</div>
+        <div id="joint-block" style="display:none">
+          <div class="tablewrap">
+            <table id="joint-table">
+              <thead><tr><th>NPI provider</th><th>Spesialisasi</th><th class="num">Klaim</th><th class="num">Rata-rata dibayar</th><th class="num">Maksimum</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="note">Baris merah: rata-rata pembayaran di atas USD 5.000. Klaim sendi bernilai tinggi bisa sah (rawat inap, implan), dan data tidak memuat diagnosis atau lama rawat untuk memastikannya.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <h3>Top 10 klaim paling mencurigakan</h3>
+      <span class="note" style="margin:0">Urut berdasarkan jumlah aturan terlanggar, lalu nilai. Klik judul kolom untuk mengurutkan ulang.</span>
+    </div>
+    <div class="tablewrap scroll-y">
+      <table id="top-table">
+        <thead><tr>
+          <th class="sortable" data-k="rank" data-t="n" scope="col">#</th>
+          <th class="sortable" data-k="CLAIM_ID" data-t="s" scope="col">Klaim</th>
+          <th class="sortable" data-k="PATIENT_ID" data-t="s" scope="col">Pasien</th>
+          <th class="sortable" data-k="CPT_DESCRIPTION" data-t="s" scope="col">Prosedur</th>
+          <th class="sortable" data-k="PROVIDER_SPECIALTY" data-t="s" scope="col">Provider</th>
+          <th class="sortable num" data-k="TOTAL_PAID_BY_INSURANCE" data-t="n" scope="col">Dibayar (USD)</th>
+          <th class="sortable num" data-k="ratio_to_median" data-t="n" scope="col">x Median</th>
+          <th scope="col">Alasan flag</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<details class="console" {% if not data.has_output %}open{% endif %}>
+  <summary>Pipeline console: keluaran eksekusi terakhir</summary>
+  <pre>{{ log_tail if log_tail else 'Belum ada log. Log ditulis ke output/pipeline_last_run.log setelah pipeline dijalankan dari dashboard.' }}</pre>
+</details>
+
+<footer>
+  <b>Batasan interpretasi.</b> Dataset: 10 pasien, 7 provider, 2017 sampai 2018, tanpa kolom diagnosis. Bagian yang disimulasikan: pengajuan klaim batch per kuartal dan skala data pada benchmark. Cacat data pada Veracity adalah cacat asli dari berkas mentah. <code>PATIENT_STATE</code> kosong pada seluruh pasien dan tingkat risiko adalah atribut turunan. Flag menandai klaim yang layak ditinjau, bukan membuktikan kecurangan.
+</footer>
+</main>
+
+<!-- ===================== LOADING OVERLAY ===================== -->
+<div id="overlay" class="overlay" role="alertdialog" aria-modal="true" aria-labelledby="ov-title" aria-describedby="ov-desc" aria-busy="true">
+  <div class="ovbox">
+    <div class="ovtop">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>
+        <h2 id="ov-title">Menjalankan pipeline PySpark</h2>
+        <p id="ov-desc">Halaman dimuat ulang otomatis saat selesai. Jangan tutup tab ini.</p>
+        <div class="elapsed" id="ov-elapsed">00:00</div>
+      </div>
+    </div>
+    <ol class="stages" id="ov-stages">
+      <li>Membaca CSV dan JSON dari data/raw</li>
+      <li>Ingestion batch kuartalan</li>
+      <li>Profil, pembersihan, dan penyimpanan ke data/processed</li>
+      <li>Replikasi skala 1.000 kali</li>
+      <li>Benchmark Operasi A dan Operasi B</li>
+      <li>Deteksi klaim tidak wajar</li>
+      <li>Menulis output dan metrik</li>
+    </ol>
+    <p class="ovnote">Penanda tahap hanya perkiraan berdasarkan waktu tunggu. Proses sebenarnya berjalan di server.</p>
+  </div>
+</div>
+
+<script>
+const D = JSON.parse('{{ data | tojson | safe }}');
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const nf = new Intl.NumberFormat('en-US');
+const fmtInt = n => (n === null || n === undefined) ? '-' : nf.format(Math.round(n));
+const fmtUSD = n => (n === null || n === undefined) ? '-' : '$' + nf.format(Math.round(n));
+const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const plotlyOK = typeof Plotly !== 'undefined';
+
+const C = {blue:'#2563eb', green:'#16a34a', red:'#dc2626', grid:'#e2e8f0', text:'#475569', soft:'#dbeafe'};
+const FONT = '"Segoe UI",system-ui,-apple-system,Arial,sans-serif';
+const baseLayout = extra => Object.assign({
+  paper_bgcolor:'#ffffff', plot_bgcolor:'#ffffff',
+  font:{family:FONT, color:C.text, size:12.5}, margin:{l:56, r:16, t:12, b:44},
+  hoverlabel:{bgcolor:'#ffffff', bordercolor:'#cbd5e1', font:{family:FONT, color:'#1f2937'}},
+  showlegend:false
+}, extra || {});
+const cfg = {displayModeBar:false, responsive:true};
+
+function emptyBox(el, title, msg){ el.innerHTML = '<div class="empty"><b>' + esc(title) + '</b>' + esc(msg) + '</div>'; }
+function draw(id, traces, layout){
+  const el = $(id);
+  if(!plotlyOK){ emptyBox(el, 'Plotly.js tidak termuat', 'Chart membutuhkan koneksi internet ke cdn.plot.ly. Periksa koneksi lalu muat ulang halaman.'); return; }
+  Plotly.newPlot(el, traces, layout, cfg);
+}
+function shorten(s, n){ s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '\u2026' : s; }
+
+/* ---------- VOLUME ---------- */
+(function(){
+  const v = D.volume;
+  $('vol-real').textContent = fmtInt(v.rows_real);
+  $('vol-scaled').textContent = fmtInt(v.rows_scaled);
+  $('vol-real-sub').textContent = fmtInt(v.patients_real) + ' pasien, dari ' + fmtInt(v.rows_raw) + ' baris mentah';
+  $('x-real').textContent = fmtInt(v.rows_real); $('x-real2').textContent = fmtInt(v.rows_real); $('x-raw').textContent = fmtInt(v.rows_raw);
+  $('x-scaled').textContent = fmtInt(v.rows_scaled); $('x-factor').textContent = fmtInt(v.scale_factor);
+  $('x-patscaled').textContent = fmtInt(v.patients_scaled);
+  $('vol-scaled-sub').textContent = fmtInt(v.patients_scaled) + ' pasien (salinan)';
+  $('vol-ratio').textContent = '1 : ' + fmtInt(v.rows_scaled / v.rows_real);
+  $('vol-fill').style.width = Math.max(0.3, 100 * v.rows_real / v.rows_scaled) + '%';
+  const items = ['Data mentah di data/raw: ' + fmtInt(v.rows_raw) + ' baris, bersih: ' + fmtInt(v.rows_real) + ' klaim', 'Faktor penggandaan: ' + fmtInt(v.scale_factor) + ' kali'];
+  if(v.partitions_scaled) items.push('Partisi Spark pada data skala: ' + fmtInt(v.partitions_scaled));
+  items.push(v.source === 'pipeline' ? 'Angka diambil dari output/pipeline_metrics.json' : 'Angka acuan statis. Jalankan pipeline untuk mengukur.');
+  $('vol-facts').innerHTML = items.map(t => '<li>' + esc(t) + '</li>').join('');
+})();
+
+/* ---------- VELOCITY ---------- */
+(function(){
+  const vel = D.velocity, src = $('vel-src');
+  if(!vel || !vel.benchmark){
+    src.textContent = 'belum diukur';
+    emptyBox($('vel-chart'), 'Belum ada pengukuran waktu', 'Klik EXECUTE PYSPARK PIPELINE. Waktu eksekusi dibaca dari output/pipeline_metrics.json.');
+    emptyBox($('vel-batch'), 'Belum ada data ingestion', 'Latensi tiap batch akan tampil setelah pipeline dijalankan.');
+    $('vel-lin').disabled = true; $('vel-log').disabled = true;
+    return;
+  }
+  src.textContent = 'terukur';
+  const b = vel.benchmark;
+  const cats = ['Data asli (' + fmtInt(b.ASLI.rows) + ' baris)', 'Data skala (' + fmtInt(b.SKALA.rows) + ' baris)'];
+  const a = [b.ASLI.op_a_s, b.SKALA.op_a_s], bb = [b.ASLI.op_b_s, b.SKALA.op_b_s];
+  const mk = (name, y, color) => ({
+    type:'bar', name, x:cats, y, marker:{color},
+    text:y.map(v => v.toFixed(3) + ' s'), textposition:'outside', cliponaxis:false,
+    hovertemplate:'<b>' + name + '</b><br>%{x}<br>%{y:.3f} detik<extra></extra>'
+  });
+  draw('vel-chart', [mk('Operasi A: agregasi', a, C.green), mk('Operasi B: relasional dan temporal', bb, C.blue)], baseLayout({
+    barmode:'group', bargap:.35, bargroupgap:.08, showlegend:true,
+    legend:{orientation:'h', y:1.14, x:0},
+    yaxis:{title:{text:'Waktu (detik)'}, gridcolor:C.grid, zeroline:false, rangemode:'tozero'},
+    xaxis:{gridcolor:C.grid}, margin:{l:62, r:16, t:34, b:46}
+  }));
+
+  const ratio = (x, y) => (x > 0 ? (y / x).toFixed(1) + ' kali' : '-');
+  $('vel-facts').innerHTML =
+    'Operasi B memakan waktu <b>' + ratio(b.ASLI.op_a_s, b.ASLI.op_b_s) + '</b> Operasi A pada data asli dan <b>' + ratio(b.SKALA.op_a_s, b.SKALA.op_b_s) + '</b> pada data skala. ' +
+    'Jumlah pengacakan data (Exchange) pada rencana eksekusi: Operasi A <b>' + esc(b.exchange_a) + '</b>, Operasi B <b>' + esc(b.exchange_b) + '</b>.';
+
+  const setScale = type => {
+    $('vel-lin').setAttribute('aria-pressed', String(type === 'linear'));
+    $('vel-log').setAttribute('aria-pressed', String(type === 'log'));
+    if(plotlyOK) Plotly.relayout('vel-chart', {'yaxis.type': type, 'yaxis.rangemode': type === 'log' ? 'normal' : 'tozero', 'yaxis.autorange': true});
+  };
+  $('vel-lin').onclick = () => setScale('linear');
+  $('vel-log').onclick = () => setScale('log');
+
+  const batches = vel.batches || [];
+  if(!batches.length){ emptyBox($('vel-batch'), 'Tidak ada log batch', 'pipeline_metrics.json tidak memuat data ingestion.'); return; }
+  draw('vel-batch', [{
+    type:'bar', x:batches.map(x => x.batch), y:batches.map(x => x.latency_s), marker:{color:C.blue},
+    customdata:batches.map(x => [x.rows, x.arrival]),
+    hovertemplate:'<b>%{x}</b><br>%{y:.3f} detik<br>%{customdata[0]} baris, tiba %{customdata[1]}<extra></extra>'
+  }], baseLayout({
+    yaxis:{title:{text:'detik'}, gridcolor:C.grid, zeroline:false}, xaxis:{gridcolor:C.grid}, margin:{l:56, r:16, t:8, b:36}
+  }));
+})();
+
+/* ---------- VERACITY ---------- */
+(function(){
+  const v = D.veracity;
+  $('ver-src').textContent = v.source === 'pipeline' ? 'terukur' : 'nilai acuan, belum dijalankan';
+  const donut = (id, pct, cleanColor) => draw(id, [{
+    type:'pie', hole:.68, sort:false, direction:'clockwise',
+    values:[pct, Math.max(0, 100 - pct)], labels:['Baris bermasalah', 'Baris bersih'],
+    marker:{colors:[C.red, cleanColor], line:{color:'#ffffff', width:2}},
+    textinfo:'none', hovertemplate:'%{label}: %{value:.2f}%<extra></extra>'
+  }], baseLayout({
+    margin:{l:8, r:8, t:8, b:8},
+    annotations:[{text:'<b>' + pct.toFixed(2) + '%</b>', showarrow:false, font:{size:26, color:C.red}, y:.54},
+                 {text:'bermasalah', showarrow:false, font:{size:12.5, color:C.text}, y:.40}]
+  }));
+  donut('ver-before', v.before_pct, '#cbd5e1');
+  donut('ver-after', v.after_pct, C.green);
+  $('ver-before-cap').textContent = v.before && v.before.total_rows ? fmtInt(v.before.total_rows) + ' baris mentah, ' + fmtInt(v.before.issue_rows) + ' bermasalah' : 'nilai acuan, belum diukur';
+  $('ver-after-cap').textContent = v.after && v.after.total_rows ? fmtInt(v.after.total_rows) + ' baris bersih, ' + fmtInt(v.after.issue_rows) + ' di-flag dan dipertahankan' : 'nilai acuan, belum diukur';
+
+  const box = $('ver-detail');
+  if(!v.before || !v.after){
+    box.innerHTML = '<p class="note">Rincian per jenis cacat tampil setelah pipeline dijalankan dan menulis <code>output/pipeline_metrics.json</code>.</p>';
+  } else {
+    const rows = [['Total baris', 'total_rows'], ['Klaim ganda (salinan kedua dan seterusnya)', 'duplicate_claim_id'],
+                  ['Spesialisasi provider kosong', 'null_specialty'], ['Nilai kosong lain (kolom kritis)', 'rows_with_null_critical'],
+                  ['Tagihan bernilai nol atau negatif', 'nonpositive_paid'], ['Biaya pasien lebih besar dari bayar asuransi', 'copay_gt_paid'],
+                  ['Baris dengan minimal satu masalah', 'issue_rows']];
+    let h = '<div class="toolbar"><h3>Rincian cacat sebelum dan sesudah</h3></div><div class="tablewrap"><table><thead><tr><th>Ukuran kualitas</th><th class="num">Sebelum</th><th class="num">Sesudah</th></tr></thead><tbody>';
+    rows.forEach(r => { h += '<tr><td>' + esc(r[0]) + '</td><td class="num">' + fmtInt(v.before[r[1]]) + '</td><td class="num">' + fmtInt(v.after[r[1]]) + '</td></tr>'; });
+    h += '</tbody></table></div>';
+    const n = [];
+    if(v.duplicates_removed != null) n.push('<b>' + fmtInt(v.duplicates_removed) + '</b> salinan klaim ganda dihapus' + (v.conflicting_duplicates === 0 ? ' (seluruhnya identik dengan aslinya, tidak ada konflik isi)' : ''));
+    if(v.specialty_imputed != null) n.push('<b>' + fmtInt(v.specialty_imputed) + '</b> spesialisasi kosong dipulihkan lewat NPI');
+    const negQ = v.quarantine_reasons && v.quarantine_reasons.NONPOSITIVE_PAID;
+    if(negQ) n.push('<b>' + fmtInt(negQ) + '</b> klaim bernilai negatif dikarantina');
+    if(v.patients_state_null != null) n.push('<code>PATIENT_STATE</code> kosong pada <b>' + fmtInt(v.patients_state_null) + '</b> dari ' + fmtInt(v.patients_total) + ' pasien (diisi UNKNOWN)');
+    if(v.cleaning_latency_s != null) n.push('waktu pembersihan <b>' + Number(v.cleaning_latency_s).toFixed(3) + ' detik</b>');
+    if(n.length) h += '<p class="note">' + n.join('; ') + '.</p>';
+    const overlap = v.before.copay_gt_paid - v.after.copay_gt_paid;
+    if(overlap > 0) h += '<p class="note">Dari ' + fmtInt(v.before.copay_gt_paid) + ' klaim dengan biaya pasien lebih besar dari bayar asuransi, ' + fmtInt(overlap) + ' adalah klaim bernilai negatif yang dikarantina. Sisanya ' + fmtInt(v.after.copay_gt_paid) + ' dipertahankan dan di-flag.</p>';
+    box.innerHTML = h;
+  }
+
+  const pf = D.processed_files || [];
+  if(!pf.length){
+    $('proc-files').innerHTML = '<div class="empty"><b>Belum ada dataset bersih</b>Folder <code>data/processed</code> akan terisi setelah pipeline dijalankan.</div>';
+  } else {
+    let t = '<div class="tablewrap"><table><thead><tr><th>Berkas</th><th>Isi</th><th class="num">Baris</th><th class="num">Ukuran</th></tr></thead><tbody>';
+    pf.forEach(f => { t += '<tr><td><code>' + esc(f.file) + '</code></td><td>' + esc(f.desc || '') + '</td><td class="num">' + (f.rows == null ? '-' : fmtInt(f.rows)) + '</td><td class="num">' + (f.kb == null ? '-' : f.kb + ' KB') + '</td></tr>'; });
+    $('proc-files').innerHTML = t + '</tbody></table></div>';
+  }
+})();
+
+/* ---------- VALUE ---------- */
+(function(){
+  const val = D.value;
+  if(!val){ $('val-empty').style.display = 'block'; return; }
+  $('val-body').style.display = 'block';
+
+  $('k-total').textContent = fmtInt(val.total_claims);
+  $('k-total-sub').textContent = 'total dibayar ' + fmtUSD(val.paid_total);
+  $('k-flag').textContent = fmtInt(val.flagged_claims);
+  $('k-flag-sub').textContent = val.flagged_pct + '% dari seluruh klaim';
+  $('k-paid').textContent = fmtUSD(val.paid_flagged);
+  $('k-paid-sub').textContent = val.paid_flagged_pct + '% dari total pembayaran. Indikasi audit, bukan bukti fraud';
+
+  if(val.rules){
+    const names = {flag_zscore:'z-score tinggi dalam CPT', flag_price_ratio:'harga 5x median CPT atau lebih', flag_rare_specialty:'spesialisasi jarang untuk CPT',
+                   flag_burst_30d:'10 klaim atau lebih dalam 30 hari', flag_copay_gt_paid:'biaya pasien > bayar asuransi'};
+    $('rule-chips').innerHTML = 'Jumlah klaim yang melanggar tiap aturan (satu klaim bisa melanggar lebih dari satu):<br>' +
+      Object.keys(names).map(k => '<span class="chip">' + esc(names[k]) + ': <b>' + fmtInt(val.rules[k]) + '</b></span>').join('');
+  }
+
+  const drawTop = mode => {
+    const rows = (mode === 'value' ? val.top_by_value : val.top_by_count).slice();
+    const xs = rows.map(r => mode === 'value' ? r.flagged_paid : r.n_flagged);
+    draw('top-chart', [{
+      type:'bar', orientation:'h', x:xs, y:rows.map(r => shorten(r.CPT_DESCRIPTION, 28)), marker:{color:C.red},
+      text:xs.map(x => mode === 'value' ? fmtUSD(x) : fmtInt(x)), textposition:'outside', cliponaxis:false,
+      customdata:rows.map(r => [r.CPT_DESCRIPTION, r.CPT_CODE, r.n_flagged, r.n_claims, r.flagged_paid]),
+      hovertemplate:'<b>%{customdata[0]}</b><br>CPT %{customdata[1]}<br>%{customdata[2]} dari %{customdata[3]} klaim ter-flag<br>Nilai ter-flag $%{customdata[4]:,}<extra></extra>'
+    }], baseLayout({
+      margin:{l:190, r:70, t:8, b:44},
+      xaxis:{title:{text:mode === 'value' ? 'Nilai klaim ter-flag (USD)' : 'Jumlah klaim ter-flag'}, gridcolor:C.grid, zeroline:false},
+      yaxis:{autorange:'reversed', automargin:true}
+    }));
+    $('top-val').setAttribute('aria-pressed', String(mode === 'value'));
+    $('top-cnt').setAttribute('aria-pressed', String(mode === 'count'));
+  };
+  drawTop('value');
+  $('top-val').onclick = () => drawTop('value');
+  $('top-cnt').onclick = () => drawTop('count');
+
+  const tbody = document.querySelector('#top-table tbody');
+  let rows = val.top_claims.slice();
+  const renderRows = () => {
+    tbody.innerHTML = rows.map(r => {
+      const chips = (r.reasons || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
+      return '<tr' + (r.n_flags >= 3 ? ' class="hot"' : '') + '>' +
+        '<td class="rank">' + esc(r.rank) + '</td>' +
+        '<td><span class="mono">' + esc(r.CLAIM_ID) + '</span></td>' +
+        '<td>' + esc(r.PATIENT_ID) + ' <span class="tier ' + esc(r.risk_tier) + '">' + esc(r.risk_tier) + '</span></td>' +
+        '<td>' + esc(r.CPT_DESCRIPTION) + '<br><span style="color:var(--muted);font-size:12.5px">CPT ' + esc(r.CPT_CODE) + '</span></td>' +
+        '<td>' + esc(r.PROVIDER_SPECIALTY) + '<br><span style="color:var(--muted);font-size:12.5px">NPI ' + esc(r.PROVIDER_NPI) + '</span></td>' +
+        '<td class="num"><b>' + fmtUSD(r.TOTAL_PAID_BY_INSURANCE) + '</b></td>' +
+        '<td class="num">' + (r.ratio_to_median === null ? '-' : Number(r.ratio_to_median).toFixed(1) + 'x') + '</td>' +
+        '<td>' + chips + '</td></tr>';
+    }).join('');
+  };
+  renderRows();
+  document.querySelectorAll('#top-table th.sortable').forEach(th => {
+    th.tabIndex = 0;
+    const sort = () => {
+      const k = th.dataset.k, numeric = th.dataset.t === 'n';
+      const dir = th.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+      document.querySelectorAll('#top-table th.sortable').forEach(o => o.removeAttribute('aria-sort'));
+      th.setAttribute('aria-sort', dir);
+      rows.sort((a, b) => {
+        const c = numeric ? (Number(a[k]) - Number(b[k])) : String(a[k]).localeCompare(String(b[k]));
+        return dir === 'ascending' ? c : -c;
+      });
+      renderRows();
+    };
+    th.addEventListener('click', sort);
+    th.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); sort(); } });
+  });
+
+  if(val.joint_replacement && val.joint_replacement.length){
+    $('joint-block').style.display = 'block';
+    document.querySelector('#joint-table tbody').innerHTML = val.joint_replacement.map(r =>
+      '<tr' + (r.avg_paid > 5000 ? ' class="hot"' : '') + '><td><span class="mono">' + esc(r.PROVIDER_NPI) + '</span></td><td>' + esc(r.PROVIDER_SPECIALTY) +
+      '</td><td class="num">' + fmtInt(r.n) + '</td><td class="num"><b>' + fmtUSD(r.avg_paid) + '</b></td><td class="num">' + fmtUSD(r.max_paid) + '</td></tr>').join('');
+  } else {
+    $('joint-empty').style.display = 'block';
+  }
+})();
+
+/* ---------- LOADING OVERLAY ---------- */
+(function(){
+  const form = $('runForm'), overlay = $('overlay'), btn = $('runBtn');
+  const stages = Array.from(document.querySelectorAll('#ov-stages li'));
+  let timer = null, t0 = 0;
+  form.addEventListener('submit', () => {
+    btn.disabled = true;
+    overlay.classList.add('on');
+    document.body.style.overflow = 'hidden';
+    t0 = Date.now();
+    const tick = () => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      $('ov-elapsed').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+      const idx = Math.min(stages.length - 1, Math.floor(s / 12));
+      stages.forEach((li, i) => { li.className = i < idx ? 'done' : (i === idx ? 'now' : ''); });
+    };
+    tick(); timer = setInterval(tick, 500);
+  });
+  window.addEventListener('pageshow', e => {
+    if(e.persisted){ overlay.classList.remove('on'); btn.disabled = false; document.body.style.overflow = ''; if(timer) clearInterval(timer); }
+  });
+})();
+</script>
+</body>
+</html>
